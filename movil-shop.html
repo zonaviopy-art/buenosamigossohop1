@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MÓVIL SHOP - Control de Ventas y Cobro por Cuotas</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<style>
+:root{--ink:#191A23;--lime:#B9FF66;--grey:#F3F3F3;--mut:#5b5d6b;--ok:#0a8f4a;--bad:#d62839}
+body{background:#fff;color:var(--ink);font-family:"Space Grotesk",system-ui,sans-serif;min-height:100vh}
+.navbar-glass{background:#fff;border-bottom:1px solid var(--ink)}
+.logo{font-size:1.5rem;font-weight:700;letter-spacing:-.02em}
+.sync{font-size:.78rem;color:var(--mut)}
+.hero h1{font-size:clamp(2rem,5vw,3.4rem);font-weight:700;line-height:1.15;letter-spacing:-.02em}
+.hero p{font-size:1.1rem;max-width:34rem;margin-top:1rem}
+.hl{background:var(--lime);padding:0 .5rem;border-radius:8px;display:inline-block}
+.sec{font-size:1.7rem;font-weight:700;margin:.5rem 0 1.2rem}
+.glass,.pcard{background:#fff;border:1px solid var(--ink);border-radius:30px;box-shadow:0 5px 0 var(--ink)}
+.pcard{padding:1.4rem;height:100%}
+.pcard small{font-size:.95rem}.pcard .v{font-size:2.2rem;font-weight:700;line-height:1.2}
+.pcard.grey{background:var(--grey)}.pcard.lime{background:var(--lime)}.pcard.ink{background:var(--ink);color:#fff}
+.btn{border-radius:12px;font-family:inherit}
+.btn-ink{background:var(--ink);color:#fff;border:1px solid var(--ink);padding:.55rem 1.2rem;font-weight:500}
+.btn-ink:hover{background:#2e3040;color:#fff}
+.btn-lime{background:var(--lime);color:var(--ink);border:1px solid var(--ink);font-weight:500}
+.btn-lime:hover{background:#a6ee4d;color:var(--ink)}
+.btn-outline-dark,.btn-outline-info,.btn-outline-success,.btn-outline-warning{color:var(--ink);border-color:var(--ink)}
+.btn-outline-dark:hover,.btn-outline-info:hover,.btn-outline-success:hover,.btn-outline-warning:hover{background:var(--lime);color:var(--ink);border-color:var(--ink)}
+.form-control,.form-select{background:#fff;border:1px solid var(--ink);color:var(--ink);border-radius:12px}
+.form-control:focus,.form-select:focus{background:#fff;color:var(--ink);border-color:var(--ink);box-shadow:0 0 0 .2rem #b9ff6699}
+.form-control::placeholder{color:#8a8c99}.form-label{font-weight:500}
+.chip{border:1px solid var(--ink);background:#fff;color:var(--ink);border-radius:10px;padding:.35rem .9rem;font-size:.9rem;font-family:inherit}
+.chip.on{background:var(--ink);color:var(--lime)}
+.sale{padding:1.7rem 1.3rem 1.3rem;height:100%;position:relative;overflow:hidden}
+.sale::before{content:"";position:absolute;inset:0 0 auto 0;height:12px;background:var(--c);border-bottom:1px solid var(--ink)}
+.badge-cat{background:var(--c);color:var(--ink);border:1px solid var(--ink);border-radius:8px;padding:.2rem .6rem;font-size:.78rem;font-weight:500}
+.st{border:1px solid var(--ink);border-radius:8px;padding:.2rem .6rem;font-size:.72rem;font-weight:700;color:var(--ink)}
+.st-paid{background:var(--lime)}.st-cuotas{background:#FFC48A}.st-over{background:#FF9A9A}
+.bar{height:14px;background:var(--grey);border:1px solid var(--ink);border-radius:10px;overflow:hidden}
+.bar>div{height:100%;background:var(--c);border-radius:10px;transition:width .5s}
+.sub{background:var(--grey);border-radius:14px;padding:.5rem .3rem;text-align:center}
+.sub small{display:block;color:var(--mut);font-size:.7rem}.sub b{font-size:.92rem}
+.calc{background:var(--lime);border:1px solid var(--ink);border-radius:20px;padding:1rem;text-align:center;box-shadow:0 4px 0 var(--ink)}
+.calc small{color:var(--ink)!important}.calc .v{font-size:1.8rem;font-weight:700}
+.modal-content{background:#fff;border:1px solid var(--ink);color:var(--ink);border-radius:30px;box-shadow:0 6px 0 var(--ink)}
+.modal-header,.modal-footer{border-color:#e3e3e3}
+.foot{background:var(--ink);color:#fff;border-radius:45px 45px 0 0;padding:2rem 0;margin-top:3rem}
+.foot b{color:var(--lime)}
+.toast-box{position:fixed;bottom:16px;right:16px;z-index:2000}
+</style>
+</head>
+<body>
+
+<nav class="navbar navbar-glass sticky-top">
+ <div class="container-xl d-flex flex-wrap gap-2 align-items-center justify-content-between py-1">
+  <div>
+   <div class="logo">🏪 <span id="storeName">MÓVIL SHOP</span></div>
+   <div class="sync" id="syncState">💾 Guardado en este dispositivo</div>
+  </div>
+  <div class="d-flex align-items-center gap-2 flex-wrap">
+   <div id="userBox"></div>
+   <button class="btn btn-outline-dark btn-sm" data-bs-toggle="modal" data-bs-target="#cfgModal" title="Configuración">⚙️</button>
+   <button class="btn btn-ink" id="btnAdd">✨ Agregar Producto</button>
+  </div>
+ </div>
+</nav>
+
+<main class="container-xl py-5">
+ <section class="hero mb-5">
+  <h1>Control de ventas y cobro por <span class="hl">cuotas</span></h1>
+  <p>Registrá productos, seguí los pagos de cada cliente y cobrá por WhatsApp en un clic.</p>
+ </section>
+ <div class="row g-4 mb-5">
+  <div class="col-12 col-md-4"><div class="pcard grey"><small>Total de ventas registradas</small><div class="v" id="sTotal">0</div></div></div>
+  <div class="col-6 col-md-4"><div class="pcard lime"><small>Dinero total cobrado</small><div class="v" id="sPaid">0</div></div></div>
+  <div class="col-6 col-md-4"><div class="pcard ink"><small>Saldo pendiente de cobro</small><div class="v" id="sPend">0</div></div></div>
+ </div>
+ <h2 class="sec"><span class="hl">Ventas</span> registradas</h2>
+ <div class="glass p-3 mb-4">
+  <input id="search" class="form-control mb-3" placeholder="🔍 Buscar por cliente, teléfono o modelo...">
+  <div class="d-flex flex-wrap gap-2" id="chips"></div>
+ </div>
+
+ <div class="row g-3" id="list"></div>
+</main>
+
+<!-- Modal venta -->
+<div class="modal fade" id="saleModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered modal-dialog-scrollable"><div class="modal-content">
+ <div class="modal-header"><h5 class="modal-title">✨ Agregar Producto / Venta</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+ <div class="modal-body">
+  <div class="row g-3">
+   <div class="col-12"><label class="form-label">Categoría</label><select id="fCat" class="form-select"></select></div>
+   <div class="col-12"><label class="form-label">Producto / Modelo</label>
+    <input id="fProd" class="form-control" list="presets" placeholder="Ej: iPhone 13 128GB"><datalist id="presets"></datalist></div>
+   <div class="col-12 col-sm-6"><label class="form-label">Cliente</label><input id="fCli" class="form-control" placeholder="Nombre completo"></div>
+   <div class="col-12 col-sm-6"><label class="form-label">WhatsApp / Teléfono</label><input id="fTel" class="form-control" inputmode="tel" placeholder="Ej: 5491155550000"></div>
+   <div class="col-6"><label class="form-label">Precio total</label><input id="fPrecio" type="number" min="0" class="form-control" placeholder="0"></div>
+   <div class="col-6"><label class="form-label">Cuotas</label><select id="fCuotas" class="form-select"></select></div>
+   <div class="col-12"><div class="calc"><small class="text-secondary">El cliente pagará</small><div class="v" id="calcOut">— / cuota</div></div></div>
+   <div class="col-12"><label class="form-label">Próximo vencimiento</label><input id="fFecha" type="date" class="form-control"></div>
+  </div>
+ </div>
+ <div class="modal-footer"><button class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button><button class="btn btn-ink" id="btnSave">Guardar venta</button></div>
+</div></div></div>
+
+<!-- Modal config -->
+<div class="modal fade" id="cfgModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content">
+ <div class="modal-header"><h5 class="modal-title">⚙️ Configuración</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+ <div class="modal-body">
+  <label class="form-label">Nombre de la tienda</label><input id="cName" class="form-control mb-3">
+  <label class="form-label">Símbolo de moneda</label><input id="cCur" class="form-control" placeholder='Ej: ARS $ o $ USD'>
+  <hr class="border-secondary my-4">
+  <label class="form-label">Respaldo de datos</label>
+  <div class="d-grid gap-2">
+   <button class="btn btn-outline-info btn-sm" id="bJson">💾 Descargar respaldo (.json)</button>
+   <button class="btn btn-outline-success btn-sm" id="bCsv">📊 Exportar a Excel (.csv)</button>
+   <button class="btn btn-outline-warning btn-sm" id="bImp">📂 Restaurar desde un respaldo</button>
+   <input type="file" id="fImp" accept=".json,application/json" hidden>
+  </div>
+  <div class="small text-secondary mt-2" id="bkInfo"></div>
+ </div>
+ <div class="modal-footer"><button class="btn btn-ink" id="btnCfg">Guardar cambios</button></div>
+</div></div></div>
+
+<footer class="foot"><div class="container-xl"><b>Tus datos están a salvo:</b> se guardan en este dispositivo, en la nube si iniciás sesión y en los respaldos que descargues.</div></footer>
+<div class="toast-box"><div id="toast" class="toast align-items-center text-bg-dark border-secondary"><div class="d-flex"><div class="toast-body" id="toastMsg"></div></div></div></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+/* ============ CONFIGURACIÓN DE FIREBASE (completá con tus datos) ============
+   1) Firebase Console → Crear proyecto → Authentication → habilitar "Google"
+   2) Realtime Database → crear base → Reglas:
+      { "rules": { "users": { "$uid": { ".read": "auth.uid === $uid", ".write": "auth.uid === $uid" } } } }
+   3) Configuración del proyecto → copiar apiKey, authDomain y databaseURL.
+   4) Authentication → Settings → Dominios autorizados: agregá el dominio donde alojes esta página. */
+const FIREBASE = {
+  apiKey: "TU_API_KEY",
+  authDomain: "TU_PROYECTO.firebaseapp.com",
+  databaseURL: "https://TU_PROYECTO-default-rtdb.firebaseio.com"
+};
+
+/* ============ ESTADO ============ */
+const CATS = {
+  cel:{n:"📱 Celulares",c:"#00E5FF",p:["iPhone 13","iPhone 14 Pro","Samsung Galaxy S23","Samsung A54","Motorola G73","Xiaomi Redmi Note 12"]},
+  moto:{n:"🏍️ Motos",c:"#FF6D00",p:["Honda Wave 110","Yamaha FZ 150","Zanella ZB 110","Corven Energy 110","Motomel Blitz 110"]},
+  pc:{n:"💻 Computadoras",c:"#2979FF",p:["Notebook Lenovo IdeaPad","Notebook HP 15","MacBook Air M1","PC de escritorio Gamer","Tablet Samsung Tab A8"]},
+  elec:{n:"📺 Electrodomésticos",c:"#AA00FF",p:["Smart TV 50\"","Heladera No Frost","Lavarropas Automático","Aire Acondicionado 3000f","Microondas"]},
+  otro:{n:"🛍️ Otros",c:"#00E676",p:["Auriculares Bluetooth","Parlante JBL","Consola PlayStation 5","Bicicleta Rodado 29"]}
+};
+const CUOTAS=[1,2,3,6,10,12,18,24];
+let S={sales:[],cfg:{store:"MÓVIL SHOP",cur:"ARS $"},updatedAt:0};
+let filt="all",user=null,tok=null,syncT=null;
+const $=id=>document.getElementById(id);
+const LS="movilshop_v1";
+
+/* ============ UTILIDADES ============ */
+const money=n=>`${S.cfg.cur} ${Math.round(n).toLocaleString("es-AR")}`;
+const esc=s=>String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
+const today=()=>new Date().toISOString().slice(0,10);
+const hhmm=()=>new Date().toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit",hour12:false});
+function toast(m){$("toastMsg").textContent=m;bootstrap.Toast.getOrCreateInstance($("toast"),{delay:2400}).show()}
+function status(s){return s.paid>=s.total-0.01?"paid":(s.due<today()?"over":"cuotas")}
+function cuotaVal(s){return s.total/s.cuotas}
+
+/* ============ PERSISTENCIA ============ */
+function load(){try{const d=JSON.parse(localStorage.getItem(LS));if(d&&d.sales)S=Object.assign(S,d)}catch(e){}}
+function save(){
+  S.updatedAt=Date.now();
+  try{localStorage.setItem(LS,JSON.stringify(S))}catch(e){}
+  render();
+  if(user){clearTimeout(syncT);setSync("⏳ Sincronizando...");syncT=setTimeout(push,600)}
+}
+function setSync(t){$("syncState").textContent=t}
+
+/* ============ FIREBASE (REST: fetch GET / PUT) ============ */
+const dbUrl=()=>`${FIREBASE.databaseURL}/users/${user.uid}/movilshop.json?auth=${tok}`;
+async function push(){
+  try{
+    tok=await user.getIdToken();
+    const r=await fetch(dbUrl(),{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(S)});
+    if(!r.ok)throw new Error(r.status);
+    setSync(`☁️ Sincronizado en la Nube (${hhmm()} hs)`);
+  }catch(e){setSync("⚠️ Sin conexión a la nube (guardado local)")}
+}
+async function pull(){
+  try{
+    tok=await user.getIdToken();
+    const r=await fetch(dbUrl());
+    if(!r.ok)throw new Error(r.status);
+    const remote=await r.json();
+    if(remote&&remote.updatedAt>S.updatedAt){
+      S={sales:remote.sales||[],cfg:remote.cfg||S.cfg,updatedAt:remote.updatedAt};
+      localStorage.setItem(LS,JSON.stringify(S));render();
+      setSync(`☁️ Sincronizado en la Nube (${hhmm()} hs)`);
+    }else await push();
+  }catch(e){setSync("⚠️ No se pudo leer la nube (revisá la configuración)")}
+}
+const fbOk=()=>FIREBASE.apiKey&&!FIREBASE.apiKey.startsWith("TU_");
+function initAuth(){
+  if(!fbOk()||typeof firebase==="undefined"){$("userBox").innerHTML="";return}
+  firebase.initializeApp({apiKey:FIREBASE.apiKey,authDomain:FIREBASE.authDomain});
+  firebase.auth().onAuthStateChanged(u=>{user=u;renderUser();if(u)pull();else setSync("💾 Guardado en este dispositivo")});
+}
+function renderUser(){
+  $("userBox").innerHTML=user
+   ?`<div class="d-flex align-items-center gap-2"><img src="${esc(user.photoURL||"")}" alt="" width="32" height="32" class="rounded-circle border border-info" referrerpolicy="no-referrer"><span class="small d-none d-md-inline">${esc(user.email)}</span><button class="btn btn-outline-danger btn-sm" id="btnOut">Salir</button></div>`
+   :`<button class="btn btn-outline-info btn-sm" id="btnIn">🔐 Iniciar sesión con Google</button>`;
+  const i=$("btnIn"),o=$("btnOut");
+  if(i)i.onclick=()=>{if(!fbOk())return toast("Primero completá la configuración de Firebase en el código");firebase.auth().signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(e=>toast("No se pudo iniciar sesión: "+e.code))};
+  if(o)o.onclick=()=>firebase.auth().signOut();
+}
+
+/* ============ RENDER ============ */
+function render(){
+  $("storeName").textContent=S.cfg.store;document.title=S.cfg.store+" - Ventas y Cuotas";
+  const t=S.sales.reduce((a,s)=>a+s.total,0),p=S.sales.reduce((a,s)=>a+s.paid,0);
+  $("sTotal").textContent=S.sales.length;$("sPaid").textContent=money(p);$("sPend").textContent=money(t-p);
+  $("chips").innerHTML=[["all","Todos","#00E5FF"],...Object.entries(CATS).map(([k,v])=>[k,v.n,v.c])]
+    .map(([k,n,c])=>`<button class="chip ${filt===k?"on":""}" style="--c:${c}" data-k="${k}">${n}</button>`).join("");
+  const q=$("search").value.trim().toLowerCase();
+  const rows=S.sales.filter(s=>(filt==="all"||s.cat===filt)&&(!q||[s.cli,s.tel,s.prod].some(x=>x.toLowerCase().includes(q))))
+    .sort((a,b)=>b.created-a.created);
+  $("list").innerHTML=rows.length?rows.map(card).join(""):
+    `<div class="col-12"><div class="glass p-5 text-center text-secondary">${S.sales.length?"No hay ventas que coincidan con la búsqueda.":"Todavía no registraste ventas. Tocá <b>✨ Agregar Producto</b> para cargar la primera."}</div></div>`;
+}
+function card(s){
+  const c=CATS[s.cat],st=status(s),pct=Math.min(100,Math.round(s.paid/s.total*100));
+  const done=Math.min(s.cuotas,Math.floor(s.paid/cuotaVal(s)+1e-6));
+  const lbl={paid:["PAGADO","st-paid"],cuotas:["EN CUOTAS","st-cuotas"],over:["VENCIDO","st-over"]}[st];
+  return `<div class="col-12 col-md-6 col-xl-4"><div class="glass sale" style="--c:${c.c}">
+   <div class="d-flex justify-content-between mb-2"><span class="badge-cat">${c.n}</span><span class="st ${lbl[1]}">${lbl[0]}</span></div>
+   <div class="fw-bold fs-5">${esc(s.cli)}</div>
+   <div class="small text-secondary">📞 ${esc(s.tel)||"Sin teléfono"}</div>
+   <div class="mb-3" style="font-weight:500">${esc(s.prod)}</div>
+   <div class="d-flex justify-content-between small mb-1"><span>${pct}% pagado</span><span class="text-secondary">${done}/${s.cuotas} cuotas</span></div>
+   <div class="bar mb-3"><div style="width:${pct}%"></div></div>
+   <div class="row g-2 mb-3 text-center">
+    <div class="col-4"><div class="sub"><small>Total</small><b>${money(s.total)}</b></div></div>
+    <div class="col-4"><div class="sub"><small>Abonado</small><b style="color:var(--ok)">${money(s.paid)}</b></div></div>
+    <div class="col-4"><div class="sub"><small>Saldo</small><b style="color:${s.total-s.paid>0.01?"var(--bad)":"var(--ok)"}">${money(Math.max(0,s.total-s.paid))}</b></div></div>
+   </div>
+   ${st!=="paid"?`<div class="small text-secondary mb-2">📅 Próximo vencimiento: ${s.due.split("-").reverse().join("/")} · cuota ${money(cuotaVal(s))}</div>`:""}
+   <div class="d-flex gap-2 flex-wrap">
+    <button class="btn btn-lime btn-sm flex-fill" data-a="wa" data-id="${s.id}">📲 Cobrar por WhatsApp</button>
+    <button class="btn btn-outline-dark btn-sm" data-a="pay" data-id="${s.id}" ${st==="paid"?"disabled":""}>💵 Abonar</button>
+    <button class="btn btn-outline-danger btn-sm" data-a="del" data-id="${s.id}" aria-label="Eliminar">🗑️</button>
+   </div></div></div>`;
+}
+
+/* ============ ACCIONES ============ */
+function whatsapp(s){
+  const saldo=Math.max(0,s.total-s.paid);
+  const msg=`Hola ${s.cli} 👋, te escribimos de ${S.cfg.store}.\nTe recordamos tu plan de pago de *${s.prod}*.\n💰 Saldo pendiente: *${money(saldo)}*\n📅 Fecha de cobro: *${s.due.split("-").reverse().join("/")}*\nCuota sugerida: ${money(Math.min(saldo,cuotaVal(s)))}\n¡Gracias!`;
+  const num=s.tel.replace(/\D/g,"");
+  window.open(`https://wa.me/${num}?text=${encodeURIComponent(msg)}`,"_blank");
+}
+function abonar(s){
+  const saldo=s.total-s.paid;
+  const v=prompt(`Saldo pendiente: ${money(saldo)}\n¿Cuánto abonó ${s.cli}?`,Math.round(Math.min(saldo,cuotaVal(s))));
+  if(v===null)return;
+  const n=parseFloat(String(v).replace(",","."));
+  if(!(n>0))return toast("Ingresá un monto válido");
+  s.paid=Math.min(s.total,s.paid+n);
+  if(s.paid<s.total){const d=new Date(s.due+"T12:00:00");d.setMonth(d.getMonth()+1);if(s.due<=today()||n>=cuotaVal(s)*0.999)s.due=d.toISOString().slice(0,10)}
+  save();toast("Pago registrado ✅");
+}
+document.addEventListener("click",e=>{
+  const ch=e.target.closest(".chip");if(ch){filt=ch.dataset.k;render();return}
+  const b=e.target.closest("[data-a]");if(!b)return;
+  const s=S.sales.find(x=>x.id===b.dataset.id);if(!s)return;
+  if(b.dataset.a==="wa")whatsapp(s);
+  if(b.dataset.a==="pay")abonar(s);
+  if(b.dataset.a==="del"&&confirm(`¿Eliminar la venta de ${s.cli}? Esta acción no se puede deshacer.`)){S.sales=S.sales.filter(x=>x.id!==s.id);save();toast("Venta eliminada")}
+});
+$("search").addEventListener("input",render);
+
+/* ============ MODAL VENTA ============ */
+const saleModal=()=>bootstrap.Modal.getOrCreateInstance($("saleModal"));
+function fillPresets(){$("presets").innerHTML=CATS[$("fCat").value].p.map(p=>`<option value="${esc(p)}">`).join("")}
+function calc(){
+  const p=parseFloat($("fPrecio").value),n=parseInt($("fCuotas").value);
+  $("calcOut").textContent=p>0?`${money(p/n)} / cuota`:"— / cuota";
+}
+$("fCat").innerHTML=Object.entries(CATS).map(([k,v])=>`<option value="${k}">${v.n}</option>`).join("");
+$("fCuotas").innerHTML=CUOTAS.map(n=>`<option value="${n}">${n} ${n===1?"cuota (contado)":"cuotas"}</option>`).join("");
+$("fCuotas").value=6;
+$("fCat").onchange=fillPresets;$("fPrecio").oninput=calc;$("fCuotas").onchange=calc;
+$("btnAdd").onclick=()=>{
+  ["fProd","fCli","fTel","fPrecio"].forEach(i=>$(i).value="");
+  const d=new Date();d.setMonth(d.getMonth()+1);$("fFecha").value=d.toISOString().slice(0,10);
+  fillPresets();calc();saleModal().show();
+};
+$("btnSave").onclick=()=>{
+  const prod=$("fProd").value.trim(),cli=$("fCli").value.trim(),total=parseFloat($("fPrecio").value);
+  if(!prod||!cli||!(total>0)||!$("fFecha").value)return toast("Completá producto, cliente, precio y fecha");
+  S.sales.push({id:"v"+Date.now().toString(36)+Math.random().toString(36).slice(2,5),cat:$("fCat").value,prod,cli,
+    tel:$("fTel").value.trim(),total,cuotas:parseInt($("fCuotas").value),paid:0,due:$("fFecha").value,created:Date.now()});
+  save();saleModal().hide();toast("Venta guardada ✅");
+};
+
+/* ============ CONFIG ============ */
+$("cfgModal").addEventListener("show.bs.modal",()=>{$("cName").value=S.cfg.store;$("cCur").value=S.cfg.cur});
+$("btnCfg").onclick=()=>{
+  S.cfg.store=$("cName").value.trim()||"MÓVIL SHOP";S.cfg.cur=$("cCur").value.trim()||"$";
+  save();bootstrap.Modal.getOrCreateInstance($("cfgModal")).hide();toast("Configuración guardada");
+};
+
+/* ============ RESPALDOS (exportar / importar) ============ */
+async function download(name,content){
+  try{
+    const d=window.claude?await window.claude.use("downloads"):null;
+    if(!d){toast("La descarga no está disponible en esta vista");return false}
+    await d.save({filename:name,data:content});return true;
+  }catch(e){if(!e||e.code!=="declined")toast("No se pudo descargar el archivo");return false}
+}
+const stamp=()=>new Date().toISOString().slice(0,10);
+function bkInfo(){
+  let last=null;try{last=localStorage.getItem(LS+"_bk")}catch(e){}
+  $("bkInfo").textContent=last?`Último respaldo descargado: ${new Date(+last).toLocaleString("es-AR")}`:"Todavía no descargaste ningún respaldo.";
+}
+$("cfgModal").addEventListener("show.bs.modal",bkInfo);
+$("bJson").onclick=async()=>{
+  if(!await download(`movil-shop-respaldo-${stamp()}.json`,JSON.stringify({app:"movil-shop",version:1,exported:Date.now(),...S},null,2),))return;
+  try{localStorage.setItem(LS+"_bk",Date.now())}catch(e){}
+  bkInfo();toast("Respaldo descargado 💾");
+};
+$("bCsv").onclick=async()=>{
+  if(!S.sales.length)return toast("No hay ventas para exportar");
+  const q=v=>`"${String(v).replace(/"/g,'""')}"`;
+  const head=["Fecha de registro","Categoría","Cliente","Teléfono","Producto","Total","Abonado","Saldo","Cuotas","Valor cuota","Vencimiento","Estado"];
+  const names={paid:"Pagado",cuotas:"En cuotas",over:"Vencido"};
+  const rows=S.sales.map(s=>[new Date(s.created).toLocaleDateString("es-AR"),CATS[s.cat].n.replace(/^\S+\s/,""),s.cli,s.tel,s.prod,
+    s.total,s.paid,Math.max(0,s.total-s.paid),s.cuotas,Math.round(cuotaVal(s)),s.due,names[status(s)]].map(q).join(";"));
+  if(await download(`movil-shop-ventas-${stamp()}.csv`,"\uFEFF"+[head.map(q).join(";"),...rows].join("\r\n")))toast("Excel exportado 📊");
+};
+$("bImp").onclick=()=>$("fImp").click();
+$("fImp").onchange=async e=>{
+  const f=e.target.files[0];e.target.value="";if(!f)return;
+  try{
+    const d=JSON.parse(await f.text());
+    if(!Array.isArray(d.sales))throw 0;
+    const n=Number;
+    const sales=d.sales.filter(s=>s&&CATS[s.cat]&&n(s.total)>0).map(s=>({
+      id:String(s.id||"v"+Math.random().toString(36).slice(2)),cat:s.cat,prod:String(s.prod||""),cli:String(s.cli||""),tel:String(s.tel||""),
+      total:n(s.total),cuotas:n(s.cuotas)||1,paid:Math.min(n(s.total),n(s.paid)||0),due:String(s.due||today()),created:n(s.created)||Date.now()}));
+    if(!confirm(`El respaldo tiene ${sales.length} ventas. Esto REEMPLAZARÁ los datos actuales (${S.sales.length} ventas). ¿Continuar?`))return;
+    S.sales=sales;if(d.cfg)S.cfg={store:String(d.cfg.store||S.cfg.store),cur:String(d.cfg.cur||S.cfg.cur)};
+    save();bootstrap.Modal.getOrCreateInstance($("cfgModal")).hide();toast("Datos restaurados ✅");
+  }catch(err){toast("Ese archivo no es un respaldo válido de MÓVIL SHOP")}
+};
+
+/* ============ INICIO ============ */
+load();render();initAuth();
+</script>
+</body>
+</html>
